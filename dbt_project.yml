@@ -36,6 +36,6 @@ clean-targets: # directories to be removed by `dbt clean`
 models:
   dbttest:
     # Applies to all files under models/example/
-    example:
+    staging:
       +materialized: table
       +schema: ACCEL_BI_STG
