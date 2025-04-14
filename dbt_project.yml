@@ -39,3 +39,7 @@ models:
     staging:
       +materialized: table
       +schema: ACCEL_BI_STG
+
+    warehouse:
+      +materialized: table
+      +schema: ACCEL_BI_BR
