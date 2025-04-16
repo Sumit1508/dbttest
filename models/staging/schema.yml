@@ -1,21 +1,10 @@
 
 version: 2
 
-models:
-    - name: my_first_dbt_model
-      description: "A starter dbt model"
-      columns:
-          - name: id
-            description: "The primary key for this table"
-            tests:
-                - unique
-                - not_null
-
-    - name: my_second_dbt_model
-      description: "A starter dbt model"
-      columns:
-          - name: id
-            description: "The primary key for this table"
-            tests:
-                - unique
-                - not_null
+sources:
+  - name: ACCEL_ABCNEW_RAW         # dbt will reference this as 'source("accel_abcnew_raw", "package")'
+    database: DEV
+    schema: ACCEL_ABCNEW_RAW
+    tables:
+      - name: package
+        description: "Raw source table containing package data"
