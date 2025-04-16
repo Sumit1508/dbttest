@@ -1,6 +1,8 @@
-
+-- This file contains the MERGE logic for DWH_Package_DBTPOC with inserted and updated row tracking
 
 DECLARE merge_query_id STRING;
+DECLARE inserted_rows INT;
+DECLARE updated_rows INT;
 
 BEGIN
     -- Run the MERGE using EXECUTE IMMEDIATE
@@ -101,4 +103,34 @@ BEGIN
             source.intl_address_question,
             source.sin_required
         )';
+
+    -- Get the query ID of the executed MERGE statement
+    LET merge_query_id = LAST_QUERY_ID();
+
+    -- Fetch counts for inserted rows
+    SELECT VALUE::INT
+    INTO :inserted_rows
+    FROM TABLE(RESULT_SCAN(:merge_query_id))
+    WHERE METRIC_NAME = 'rows_inserted';
+
+    -- Fetch counts for updated rows
+    SELECT VALUE::INT
+    INTO :updated_rows
+    FROM TABLE(RESULT_SCAN(:merge_query_id))
+    WHERE METRIC_NAME = 'rows_updated';
+
+    -- Log the counts for inserted and updated rows
+    -- You can insert these values into your logging or tracking table if needed
+    -- For example:
+    INSERT INTO ACCEL_LOGGINGDB.MODEL_EXECUTION_LOGS (
+        model_name, run_at, inserted_rows, updated_rows, dbt_user
+    )
+    VALUES (
+        'DWH_Package_DBTPOC',
+        CURRENT_TIMESTAMP(),
+        :inserted_rows,
+        :updated_rows,
+        CURRENT_USER()
+    );
+
 END;
