@@ -1,11 +1,5 @@
--- macros/tests/custom_pkg_price_check.sql
-{% test custom_pkg_price_check(model) %}
-  WITH invalid_prices AS (
-      SELECT *
-      FROM {{ model }}
-      WHERE pkg_price < 0
-  )
-  SELECT *
-  FROM invalid_prices
-  LIMIT 1
+{% test custom_pkg_price_check(model, column_name) %}
+    SELECT *
+    FROM {{ model }}
+    WHERE {{ column_name }} < 0
 {% endtest %}
