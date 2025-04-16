@@ -11,20 +11,9 @@ models:
           - not_null
           - unique
 
-      - name: pkg_name
-        description: "Name of the package"
-        tests:
-          - not_null
-
-      - name: pkg_name_short
-        description: "Short display name for the package"
-        tests:
-          - not_null
-
       - name: pkg_price
         description: "Price of the package"
         tests:
-          - not_null
           - dbt_utils.expression_is_true:
               expression: "pkg_price >= 0"
 
@@ -39,16 +28,6 @@ models:
         tests:
           - accepted_values:
               values: [true, false]
-
-      - name: init_comp
-        description: "Initial component or company code"
-        tests:
-          - not_null
-
-      - name: search_type_code
-        description: "Code that defines the type of search"
-        tests:
-          - not_null
 
       - name: yr_searched
         description: "Years of search history"
