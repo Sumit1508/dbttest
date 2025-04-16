@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: DWH_Package_DBTPOC
+  - name: DWH_Package_dbtpoc
     description: "Data warehouse table containing curated package data"
 
     columns:
