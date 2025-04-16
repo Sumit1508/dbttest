@@ -33,7 +33,7 @@ WITH staged AS (
             'intl_address_question', intl_address_question,
             'sin_required', sin_required
         ))) AS row_hash
-    FROM  {{ ref('stg_package_dbtpoc') }}
+    FROM  {{ ref('Stg_Package_dbtpoc') }}
 
 )
 
