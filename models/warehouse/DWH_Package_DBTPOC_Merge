@@ -1,4 +1,5 @@
 -- This file contains the MERGE logic for DWH_Package_DBTPOC with inserted and updated row tracking
+{% set source_model = ref('DWH_Package_dbtpoc') %}
 
 DECLARE merge_query_id STRING;
 DECLARE inserted_rows INT;
@@ -8,7 +9,7 @@ BEGIN
     -- Run the MERGE using EXECUTE IMMEDIATE
     EXECUTE IMMEDIATE '
         MERGE INTO DEV.ACCEL_BI_BR.DWH_Package_DBTPOC AS target
-        USING ' || '"{{ ref('Stg_Package_dbtpoc') }}"' || ' AS source
+        USING ' || '''{{ ref('Stg_Package_dbtpoc') }}''' || ' AS source
         ON target.package_code = source.package_code
         WHEN MATCHED AND (
             target.pkg_name != source.pkg_name OR
