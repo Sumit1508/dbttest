@@ -2,7 +2,8 @@
     materialized='incremental',
     alias='DWH_Package_DBTPOC',
     unique_key='package_code',
-    on_schema_change='sync_all_columns'
+    on_schema_change='sync_all_columns',
+    post_hook=[log_merge_stats(this)]
 ) }}
 
 WITH staged AS (
