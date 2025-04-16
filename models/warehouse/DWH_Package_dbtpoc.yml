@@ -28,4 +28,10 @@ models:
         tests:
           - not_null
 
+      - name: pkg_price
+        description: "Package price"
+        tests:
+          - custom_pkg_price_check  # Custom test that ensures pkg_price >= 0
+
+
 
