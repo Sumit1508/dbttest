@@ -1,6 +1,6 @@
 
 
-MERGE INTO ACCEL_BI_BR.DimPackage_Dbtpoc T
+MERGE INTO ACCEL_BI_BR.DWH_Package_DBTPOC T
 USING (
     SELECT *
     FROM ACCEL_BI_STG.stg_package_dbtpoc
