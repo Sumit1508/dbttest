@@ -1,5 +1,5 @@
 
-Select * from (
+;with cte AskConv(
 MERGE INTO ACCEL_BI_BR.DimPackage_Dbtpoc T
 USING (
     SELECT *
@@ -68,4 +68,7 @@ VALUES (
     S.IsPackagePlus, S.IsAddlInfoNeeded, S.NoFMComponent, S.NameCount, S.CountyCount,
     S.AskConv, S.IsMinorBlocked, S.IsAddPositionLocationSearches, S.Is_Auto_W2_Opt,
     S.Is_Auto_W2_Utv, S.Is_int_address_question, S.Is_Sin_Required
-))
+)
+)
+
+Select * from cte
