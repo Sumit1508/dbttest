@@ -1,7 +1,7 @@
 {{ config(
     materialized='incremental',
     alias='DWH_Package_DBTPOC',
-    unique_key='PackageCode',
+    unique_key='package_code',
     on_schema_change='sync_all_columns'
 ) }}
 
