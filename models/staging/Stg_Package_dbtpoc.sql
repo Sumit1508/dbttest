@@ -22,5 +22,5 @@ SELECT
     CAST(CASE UPPER(intl_address_question) WHEN 'Y' THEN TRUE ELSE FALSE END AS BOOLEAN) AS intl_address_question,
     CAST(CASE UPPER(sin_required) WHEN 'Y' THEN TRUE ELSE FALSE END AS BOOLEAN) AS sin_required
 
-FROM DEV.ACCEL_ABCNEW_RAW.PACKAGE
+FROM {{ source('ACCEL_ABCNEW_RAW', 'package') }}
 
