@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: DWH_Package_DBTPOC
+    description: "Data warehouse table containing curated package data"
+
+    columns:
+      - name: package_code
+        description: "Unique code identifying the package"
+        tests:
+          - not_null
+          - unique
+
+      - name: pkg_name
+        description: "Name of the package"
+        tests:
+          - not_null
+
+      - name: pkg_name_short
+        description: "Short display name for the package"
+        tests:
+          - not_null
+
+      - name: pkg_price
+        description: "Price of the package"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "pkg_price >= 0"
+
+      - name: pkg_active
+        description: "Indicates whether the package is active"
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+      - name: allow_ala_carte
+        description: "Indicates if ala carte items are allowed"
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+      - name: init_comp
+        description: "Initial component or company code"
+        tests:
+          - not_null
+
+      - name: search_type_code
+        description: "Code that defines the type of search"
+        tests:
+          - not_null
+
+      - name: yr_searched
+        description: "Years of search history"
+        tests:
+          - not_null
+
+
