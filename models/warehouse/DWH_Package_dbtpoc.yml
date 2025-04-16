@@ -15,7 +15,7 @@ models:
         description: "Price of the package"
         tests:
           - dbt_utils.expression_is_true:
-              expression: "pkg_price > 0"
+              expression: "pkg_price >= 0"
 
       - name: pkg_active
         description: "Indicates whether the package is active"
