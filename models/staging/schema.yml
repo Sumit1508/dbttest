@@ -8,3 +8,10 @@ sources:
     tables:
       - name: package
         description: "Raw source table containing package data"
+
+  - name: ACCEL_BI_STG
+    database: DEV
+    schema: ACCEL_BI_STG
+    tables:
+      - name: stg_package_dbtpoc
+        description: "Raw package data source table"
