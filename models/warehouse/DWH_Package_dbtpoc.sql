@@ -1,19 +1,11 @@
 {{ config(
-    lias='DWH_Package_DBTPOC',
+    materialized='incremental',
+    alias='DWH_Package_DBTPOC',
     unique_key='package_code',
     on_schema_change='sync_all_columns',
-    post_hook=[log_merge_stats(this)]  
-) }}
-
-WITH staged AS (
-    SELECT
-        *
-    FROM {{ ref('Stg_Package_dbtpoc') }}
-)
-
-MERGE INTO {{ this }} AS target
-USING staged AS source
-  ON target.package_code = source.package_code
+    post_hook=["MERGE INTO ACCEL_BI_BR.DWH_Package_DBTPOC AS target
+USING {{ ref('Stg_Package_dbtpoc') }} AS source
+ON target.package_code = source.package_code
 
 WHEN MATCHED AND (
     target.pkg_name != source.pkg_name OR
@@ -37,8 +29,8 @@ WHEN MATCHED AND (
     target.auto_W2_utv != source.auto_W2_utv OR
     target.intl_address_question != source.intl_address_question OR
     target.sin_required != source.sin_required
-) THEN
-  UPDATE SET
+)
+THEN UPDATE SET
     pkg_name = source.pkg_name,
     pkg_name_short = source.pkg_name_short,
     pkg_desc = source.pkg_desc,
@@ -61,8 +53,7 @@ WHEN MATCHED AND (
     intl_address_question = source.intl_address_question,
     sin_required = source.sin_required
 
-WHEN NOT MATCHED THEN
-  INSERT (
+WHEN NOT MATCHED THEN INSERT (
     package_code,
     pkg_name,
     pkg_name_short,
@@ -85,8 +76,8 @@ WHEN NOT MATCHED THEN
     auto_W2_utv,
     intl_address_question,
     sin_required
-  )
-  VALUES (
+)
+VALUES (
     source.package_code,
     source.pkg_name,
     source.pkg_name_short,
@@ -109,13 +100,13 @@ WHEN NOT MATCHED THEN
     source.auto_W2_utv,
     source.intl_address_question,
     source.sin_required
-  );
+);
 
--- Log the number of inserted and updated rows
-insert into your_schema.merge_log_table
-select
-  '{{ this.identifier }}',
-  current_timestamp(),
-  sum(case when metadata$action = 'INSERT' then 1 else 0 end) as rows_inserted,
-  sum(case when metadata$action = 'UPDATE' then 1 else 0 end) as rows_updated
-from table(result_scan(last_query_id()));
+
+"
+
+    ]
+) }}
+
+
+SELECT * FROM {{ ref('Stg_Package_dbtpoc') }}
