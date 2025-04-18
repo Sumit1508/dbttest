@@ -31,6 +31,7 @@
 
 {% else %}
 
-    SELECT * FROM {{ ref('Stg_Package_dbtpoc') }}
+    SELECT *
+    FROM {{ ref('Stg_Package_dbtpoc') }}
 
 {% endif %}
