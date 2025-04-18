@@ -16,7 +16,8 @@
                 'intl_address_question', 'sin_required'
             ]
         )
-    ]
+    ],
+    on_error="on_error_handling"
 ) }}
 
 -- Dummy SELECT (only for initial temp view, won't be used during merge)
