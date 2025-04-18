@@ -24,3 +24,5 @@ SELECT
 
 FROM {{ source('ACCEL_ABCNEW_RAW', 'package') }}
 
+
+
