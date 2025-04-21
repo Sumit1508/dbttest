@@ -1,7 +1,3 @@
-{{ config(
-    materialized = 'table',
-    alias = 'order_request_with_search_dim'
-) }}
 
 SELECT 
     ORQ.OR_id,
