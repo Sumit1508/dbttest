@@ -1,17 +1,12 @@
-
 version: 2
 
 sources:
-  - name: ACCEL_ABCNEW_RAW         # dbt will reference this as 'source("accel_abcnew_raw", "package")'
+  - name: ACCEL_ABCNEW_RAW        # Lowercase to match dbt best practice
     database: DEV
     schema: ACCEL_ABCNEW_RAW
     tables:
       - name: package
         description: "Raw source table containing package data"
 
-  - name: ACCEL_ABCNEW_RAW         # dbt will reference this as 'source("accel_abcnew_raw", "journal")'
-    database: DEV
-    schema: ACCEL_ABCNEW_RAW
-    tables:
       - name: journal
         description: "Raw source table"
