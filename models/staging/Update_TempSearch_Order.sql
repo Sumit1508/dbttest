@@ -114,7 +114,7 @@ SELECT
     pc.InvitationEmailSent,
     fa.FinalAdjudicatorName,
     nra.NeedsReviewAdjudicatorName,
-    so.adj_adjudicator_review_note AS AdjudicationNote
+    so.AdjudicationNote
 
 FROM {{ ref('TempSearch_Order') }} so
 LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
