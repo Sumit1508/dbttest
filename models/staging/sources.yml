@@ -16,3 +16,7 @@ sources:
       
       - name: HISTORY_DETAIL
       - name: ADJ_PROCESS_DETAIL
+      - name: Auto_Notes
+      - name: ADJ_OPTION
+      - name: ABCUSER
+      - name: SEARCH
