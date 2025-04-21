@@ -24,7 +24,7 @@
                 'OINSearchCount', 'IsOIN', 'IsRN', 'AdjudicationNote', 'FinalAdjudicatorName',
                 'NeedsReviewAdjudicatorName', 'ABReviewerName', 'InvitationEmailSent',
                 'PackageProcessedDate', 'DatePlacedIntoNeedReview', 'OrderInitiationDate',
-                'adj_grid_id', 'adj_grid_name'
+                'adj_grid_id', 'adj_grid_name','PackageKey'
             ]
         ) }}"
     ]
