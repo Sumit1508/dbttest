@@ -8,6 +8,7 @@ SELECT
     OT.OT_SubType AS "OrderSubType",
     SO.package_req_id AS "PackageID",
     SO.PackageCode,
+    p.PackageKey,
     SO.OrderDate AS "OrderDate",
     ORQ.OR_ClientRefNum AS "ClientRefNum",
     SO.CompletionDate AS "CompletionDate",
@@ -113,6 +114,9 @@ FROM
     {{ ref('TempSearch_Order') }} SO
 INNER JOIN 
     ACCEL_ABCNEW_RAW.SEARCH_STATUS ST ON ST.status_code = SO.search_status
+
+ LEFT JOIN {{ ref('DWH_Package_dbtpoc') }} p
+        ON p.PackageCode = SO.PackageCode
 LEFT JOIN 
     ACCEL_BI_BR.DWH_DimOrder DimOdr ON DimOdr.PackageID = SO.package_req_id
 LEFT JOIN 
