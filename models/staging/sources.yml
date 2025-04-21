@@ -13,3 +13,6 @@ sources:
 
       - name: OR_EAV_ENTITY_GEN
         description: "Entity attribute values table"
+      
+      - name: HISTORY_DETAIL
+      - name: ADJ_PROCESS_DETAIL
