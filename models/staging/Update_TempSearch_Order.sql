@@ -18,7 +18,7 @@ adj_trigger_reason AS (
     SELECT 
         search_id,
         reason,
-        ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY adj_process_detail_id DESC) AS rw
+        ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY adj_process_detail_id DESC) AS rn
     FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_PROCESS_DETAIL') }}
     WHERE adj_value IS NOT NULL
 ),
@@ -47,7 +47,6 @@ complete_date AS (
         ON o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
     WHERE h.status_code = 'R'
       AND h.history_category = 'ADJ'
-      AND h.search_id IS NOT NULL
 ),
 
 package_completed AS (
@@ -63,26 +62,46 @@ package_completed AS (
     WHERE h.history_category = 'EML'
 ),
 
-adjudicator_info AS (
+final_adj AS (
     SELECT 
         h.search_id,
-        MAX(CASE WHEN o2.adj_category IN (0, 1) THEN u.user_first_name || ' ' || u.user_last_name END) AS FinalAdjudicatorName,
-        MAX(CASE WHEN o2.adj_category = 2 THEN u.user_first_name || ' ' || u.user_last_name END) AS NeedsReviewAdjudicatorName,
-        MAX(h.adj_adjudicator_review_note) AS AdjudicationNote
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-        ON o2.adj_id = h.adj_id
-    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u 
-        ON u.user_id = h.user_id
-    WHERE h.status_code = 'R'
-      AND h.history_category = 'ADJ'
-    GROUP BY h.search_id
+        u.user_first_name || ' ' || u.user_last_name AS FinalAdjudicatorName
+    FROM (
+        SELECT 
+            search_id,
+            user_id,
+            ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
+        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
+        JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
+            ON o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
+        WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
+    ) h
+    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
+    WHERE h.rn = 1
+),
+
+needs_review_adj AS (
+    SELECT 
+        h.search_id,
+        u.user_first_name || ' ' || u.user_last_name AS NeedsReviewAdjudicatorName
+    FROM (
+        SELECT 
+            search_id,
+            user_id,
+            ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
+        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
+        JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
+            ON o2.adj_id = h.adj_id AND o2.adj_category = 2
+        WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
+    ) h
+    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
+    WHERE h.rn = 1
 )
 
 SELECT 
     so.*,
 
-    -- Updated fields
+    -- Enriched fields
     f.DOC_FEE,
     f.STATUTORY_FEE,
     f.addl_year_fee,
@@ -93,18 +112,19 @@ SELECT
     cd.history_time AS CompleteDate,
     pc.PackageCompleted10Days,
     pc.InvitationEmailSent,
-    ai.FinalAdjudicatorName,
-    ai.NeedsReviewAdjudicatorName,
-    ai.AdjudicationNote
+    fa.FinalAdjudicatorName,
+    nra.NeedsReviewAdjudicatorName,
+    so.adj_adjudicator_review_note AS AdjudicationNote
 
 FROM {{ ref('TempSearch_Order') }} so
 LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
-LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rw = 1
+LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rn = 1
 LEFT JOIN canned_note cn ON cn.note_id = so.search_note_id
 LEFT JOIN ab_end_date ae ON ae.package_req_id = so.PackageId
 LEFT JOIN complete_date cd ON cd.search_id = so.SearchId
 LEFT JOIN package_completed pc ON pc.search_id = so.SearchId
-LEFT JOIN adjudicator_info ai ON ai.search_id = so.SearchId
+LEFT JOIN final_adj fa ON fa.search_id = so.SearchId
+LEFT JOIN needs_review_adj nra ON nra.search_id = so.SearchId
 
 {% if is_incremental() %}
 WHERE so.SearchId NOT IN (SELECT SearchId FROM {{ this }})
