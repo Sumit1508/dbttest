@@ -9,3 +9,9 @@ sources:
       - name: package
         description: "Raw source table containing package data"
 
+  - name: ACCEL_ABCNEW_STG        # dbt will reference this as 'source("accel_abcnew_raw", "package")'
+    database: DEV
+    schema: ACCEL_ABCNEW_STG
+    tables:
+      - name: Stg_Serch_Dim
+        description: "Raw source table containing Incremental data"
