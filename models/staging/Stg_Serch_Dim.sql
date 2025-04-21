@@ -1,10 +1,10 @@
 WITH GetDeltaSearch_SearchId AS (
     SELECT DISTINCT s1.search_id
-    FROM SEARCH s1
+    FROM ACCEL_ABCNEW_RAW.SEARCH s1
     WHERE '2020-12-01' IS NOT NULL AND (
         s1.package_req_id IN (
             SELECT s.package_req_id
-            FROM SEARCH s
+            FROM ACCEL_ABCNEW_RAW.SEARCH s
             WHERE s.last_update_date >= '2020-12-01'
         )
         OR (s1.last_update_date >= '2020-12-01' AND s1.package_req_id IS NULL)
@@ -15,7 +15,7 @@ LatestFollowUpNote AS (
     SELECT searchId, followUpNote
     FROM (
         SELECT *, ROW_NUMBER() OVER (PARTITION BY searchId ORDER BY id DESC) AS rn
-        FROM FOLLOW_UP_HISTORY
+        FROM ACCEL_ABCNEW_RAW.FOLLOW_UP_HISTORY
     )
     WHERE rn = 1
 )
@@ -74,11 +74,11 @@ SELECT
         ELSE NULL
     END AS VendorETADate
 
-FROM SEARCH s
+FROM ACCEL_ABCNEW_RAW.SEARCH s
 LEFT JOIN GetDeltaSearch_SearchId g ON s.search_id = g.search_id
-LEFT JOIN COUNTY c ON c.county_id = s.county_id
-LEFT JOIN COUNTRY ct ON ct.country_code = c.country_code
-LEFT JOIN SEARCH_STATUS st ON st.status_code = s.search_status
-LEFT JOIN STATE_CODE sc ON sc.state_code = s.state_code
-LEFT JOIN Auto_Notes n ON n.note_id = s.search_note_id
-LEFT JOIN LatestFollowUpNote fh ON fh.searchId = s.search_id;
+LEFT JOIN ACCEL_ABCNEW_RAW.COUNTY c ON c.county_id = s.county_id
+LEFT JOIN ACCEL_ABCNEW_RAW.COUNTRY ct ON ct.country_code = c.country_code
+LEFT JOIN ACCEL_ABCNEW_RAW.SEARCH_STATUS st ON st.status_code = s.search_status
+LEFT JOIN ACCEL_ABCNEW_RAW.STATE_CODE sc ON sc.state_code = s.state_code
+LEFT JOIN ACCEL_ABCNEW_RAW.Auto_Notes n ON n.note_id = s.search_note_id
+LEFT JOIN LatestFollowUpNote fh ON fh.searchId = s.search_id
