@@ -117,9 +117,10 @@ SELECT
     so.AdjudicationNote
 
 FROM {{ ref('TempSearch_Order') }} so
+LEFT JOIN {{ ref('Stg_Serch_Dim') }}  ON s S.searchID=SO.SearchId
 LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
 LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rn = 1
-LEFT JOIN canned_note cn ON cn.note_id = so.search_note_id
+LEFT JOIN canned_note cn ON cn.note_id = s.search_note_id
 LEFT JOIN ab_end_date ae ON ae.package_req_id = so.PackageId
 LEFT JOIN complete_date cd ON cd.search_id = so.SearchId
 LEFT JOIN package_completed pc ON pc.search_id = so.SearchId
