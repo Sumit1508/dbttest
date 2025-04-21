@@ -1,3 +1,8 @@
+{{ config(
+    materialized = 'incremental',
+    unique_key = 'SearchId'
+) }}
+
 WITH fee_info AS (
     SELECT 
         PackageId AS package_req_id,
@@ -8,6 +13,7 @@ WITH fee_info AS (
     FROM {{ ref('Stg_Serch_Dim') }}
     GROUP BY PackageId
 ),
+
 adj_trigger_reason AS (
     SELECT 
         search_id,
@@ -16,12 +22,14 @@ adj_trigger_reason AS (
     FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_PROCESS_DETAIL') }}
     WHERE adj_value IS NOT NULL
 ),
+
 canned_note AS (
     SELECT 
-        search_note_id,
+        note_id,
         note_description
     FROM {{ source('ACCEL_ABCNEW_RAW', 'Auto_Notes') }}
 ),
+
 ab_end_date AS (
     SELECT 
         package_req_id,
@@ -29,77 +37,75 @@ ab_end_date AS (
     FROM {{ source('ACCEL_ABCNEW_RAW', 'SEARCH') }}
     WHERE search_type_code = '9PK'
 ),
+
 complete_date AS (
     SELECT 
-        search_id,
-        history_time
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }}
-    WHERE status_Code = 'R'
-      AND history_category = 'ADJ'
-      AND EXISTS (
-          SELECT 1 FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2
-          WHERE o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
-      )
+        h.search_id,
+        h.history_time
+    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
+    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
+        ON o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
+    WHERE h.status_code = 'R'
+      AND h.history_category = 'ADJ'
+      AND h.search_id IS NOT NULL
 ),
+
 package_completed AS (
     SELECT 
         h.search_id,
+        h.history_time AS InvitationEmailSent,
         CASE 
             WHEN DATEDIFF(DAY, h.history_time, s.OrderDate) <= 10 THEN 'Y'
             ELSE 'N'
-        END AS PackageCompleted10Days,
-        h.history_time AS InvitationEmailSent
+        END AS PackageCompleted10Days
     FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-    INNER JOIN {{ ref('Stg_Serch_Dim') }} s ON s.SearchId = h.search_id
-    WHERE h.history_id = (
-        SELECT MIN(h5.history_id)
-        FROM {{ ref('Stg_Serch_Dim') }} CE
-        CROSS APPLY {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h5
-        WHERE h5.search_id = h.search_id
-        AND h5.history_category = 'EML' 
-        AND h5.history LIKE CE.convention
-    )
+    JOIN {{ ref('Stg_Serch_Dim') }} s ON s.SearchId = h.search_id
+    WHERE h.history_category = 'EML'
 ),
+
 adjudicator_info AS (
     SELECT 
-        h.search_id, 
-        A.user_first_name || ' ' || A.user_last_name AS FinalAdjudicatorName,
-        AU.user_first_name || ' ' || AU.user_last_name AS NeedsReviewAdjudicatorName,
-        adj_adjudicator_review_note
+        h.search_id,
+        MAX(CASE WHEN o2.adj_category IN (0, 1) THEN u.user_first_name || ' ' || u.user_last_name END) AS FinalAdjudicatorName,
+        MAX(CASE WHEN o2.adj_category = 2 THEN u.user_first_name || ' ' || u.user_last_name END) AS NeedsReviewAdjudicatorName,
+        MAX(h.adj_adjudicator_review_note) AS AdjudicationNote
     FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-    LEFT JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} A ON A.user_id = h.user_id
-    LEFT JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} AU ON AU.user_id = h.user_id
-    WHERE h.history_id = (
-        SELECT MAX(h5.history_id)
-        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h5
-        INNER JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 ON o2.adj_id = h5.adj_id
-        WHERE h5.search_id = h.search_id AND h5.status_Code = 'R'
-        AND h5.history_category = 'ADJ' AND o2.adj_category IN (0, 1)
-    )
+    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
+        ON o2.adj_id = h.adj_id
+    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u 
+        ON u.user_id = h.user_id
+    WHERE h.status_code = 'R'
+      AND h.history_category = 'ADJ'
+    GROUP BY h.search_id
 )
 
--- Main query starts here
 SELECT 
-    SO.SearchId,
-    COALESCE(SO.PackageId, F.PackageId) AS PackageId,
-    COALESCE(SO.StatusCode, F.StatusCode) AS StatusCode,
-    -- Add other fields like in your original query
-    COALESCE(F.DOC_FEE, 0) AS DOC_FEE,
-    COALESCE(F.STATUTORY_FEE, 0) AS STATUTORY_FEE,
-    COALESCE(F.ADDITIONAL_YEAR_FEE, 0) AS ADDITIONAL_YEAR_FEE,
-    -- Additional fields
-    COALESCE(AI.FinalAdjudicatorName, 'N/A') AS FinalAdjudicatorName
-FROM 
-    {{ ref('TempSearch_Order') }} SO
-LEFT JOIN fee_info F ON F.package_req_id = SO.PackageId
-LEFT JOIN adj_trigger_reason ATR ON ATR.search_id = SO.SearchId AND ATR.rw = 1
-LEFT JOIN canned_note CN ON CN.search_note_id = SO.search_note_id
-LEFT JOIN ab_end_date AE ON AE.package_req_id = SO.PackageId
-LEFT JOIN complete_date CD ON CD.search_id = SO.SearchId
-LEFT JOIN package_completed PC ON PC.search_id = SO.SearchId
-LEFT JOIN adjudicator_info AI ON AI.search_id = SO.SearchId
+    so.*,
+
+    -- Updated fields
+    f.DOC_FEE,
+    f.STATUTORY_FEE,
+    f.addl_year_fee,
+    f.COPIES,
+    atr.reason AS AdjTriggerReason,
+    cn.note_description AS CannedNote,
+    ae.return_datetime AS ABEndDate,
+    cd.history_time AS CompleteDate,
+    pc.PackageCompleted10Days,
+    pc.InvitationEmailSent,
+    ai.FinalAdjudicatorName,
+    ai.NeedsReviewAdjudicatorName,
+    ai.AdjudicationNote
+
+FROM {{ ref('TempSearch_Order') }} so
+LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
+LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rw = 1
+LEFT JOIN canned_note cn ON cn.note_id = so.search_note_id
+LEFT JOIN ab_end_date ae ON ae.package_req_id = so.PackageId
+LEFT JOIN complete_date cd ON cd.search_id = so.SearchId
+LEFT JOIN package_completed pc ON pc.search_id = so.SearchId
+LEFT JOIN adjudicator_info ai ON ai.search_id = so.SearchId
 
 {% if is_incremental() %}
-    -- Add incremental logic to update existing records
-    WHERE SO.SearchId NOT IN (SELECT SearchId FROM {{ this }})
+WHERE so.SearchId NOT IN (SELECT SearchId FROM {{ this }})
 {% endif %}
