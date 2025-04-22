@@ -39,14 +39,24 @@ ab_end_date AS (
 ),
 
 complete_date AS (
-    SELECT 
-        h.search_id,
-        h.history_time
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-        ON o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
-    WHERE h.status_code = 'R'
-      AND h.history_category = 'ADJ'
+SELECT 
+    h.search_id,
+    h.history_time
+FROM (
+    SELECT *
+    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }}
+    WHERE NULLIF(adj_id, '') IS NOT NULL  -- Excluding empty string `adj_id` values
+) h
+JOIN (
+SELECT *
+FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }}
+WHERE NULLIF(TRIM(adj_id), '') IS NOT NULL 
+  AND adj_category IN (0, 1)
+) o2 
+ON TRY_TO_NUMBER(h.adj_id) = TRY_TO_NUMBER(o2.adj_id)
+WHERE h.status_code = 'R'
+  AND h.history_category = 'ADJ'
+
 ),
 
 package_completed AS (
