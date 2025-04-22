@@ -178,4 +178,4 @@ LEFT JOIN (
     WHERE RNUM = 1
 ) DO ON DO.package_id = ORQ.OR_PackageId
 WHERE 
-    SO.package_req_id IS NOT NULL;
+    SO.package_req_id IS NOT NULL

@@ -109,9 +109,7 @@ needs_review_adj AS (
 )
 
 SELECT 
-    so.*,
-
-    -- Enriched fields
+  -- Enriched fields
 
     atr.reason AS AdjTriggerReason,
     cn.note_description AS CannedNote,
