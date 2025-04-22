@@ -6,21 +6,21 @@ SELECT
     OO.OO_SubCode AS "OrderOriginSubCode",
     OT.OT_Type AS "OrderType",
     OT.OT_SubType AS "OrderSubType",
-    SO.package_req_id AS "PackageID",
-    SO.PackageCode,
-    p.PackageKey,
+    SO.PackageID ,
+    --p.package_code,
+   -- p.PackageKey,
     SO.OrderDate AS "OrderDate",
     ORQ.OR_ClientRefNum AS "ClientRefNum",
     SO.CompletionDate AS "CompletionDate",
     ST.status AS "Status",
-    SO.sub_status AS "SubStatus",
+    SO.SubStatus AS "SubStatus",
     CAST(ORQ.OR_ResultSentDate AS DATE) AS "ResultSentDate",
-    L.language_code AS "LocaleCode",
-    CAST(SO.invoice_datetime AS DATE) AS "InvoiceDatetime",
-    CAST(SO.not_monthly_invoice_datetime AS DATE) AS "NotMonthlyInvoiceDatetime",
-    CAST(SO.researcher_summary_date AS DATE) AS "ResearcherSummaryDate",
-    SO.result_note AS "ResultNote",
-    SO.status_note AS "StatusNote",
+    --L.language_code AS "LocaleCode",
+    CAST(SO.InvoiceDatetime AS DATE) AS "InvoiceDatetime",
+    CAST(SO.NotMonthlyInvoiceDatetime AS DATE) AS "NotMonthlyInvoiceDatetime",
+    CAST(SO.ResearcherSummaryDate AS DATE) AS "ResearcherSummaryDate",
+    SO.ResultNote AS "ResultNote",
+    SO.StatusNote AS "StatusNote",
     CAST(SO.email_sent AS DATE) AS "EmailSent",
     ADJ.adj_desc AS "AdjudicationDescription",
     CAST(SO.need_review_email_sent AS DATE) AS "NeedReviewEmailSent",
@@ -28,8 +28,8 @@ SELECT
     SO.pkg_processed AS "PkgProcessed",
     SO.DOC_FEE,
     SO.STATUTORY_FEE,
-    SO.addl_year_fee,
-    SO.COPIES_FEE,
+    SO.ADDITIONAL_YEAR_FEE,
+    SO.COPIES,
     0 AS "InsertAuditKey",
     0 AS "UpdateAuditKey",
     CASE 
@@ -107,22 +107,22 @@ SELECT
         WHEN DimOdr.DatePlacedIntoNeedReview IS NOT NULL AND SO.DatePlacedIntoNeedReview IS NULL THEN DimOdr.DatePlacedIntoNeedReview
         ELSE SO.DatePlacedIntoNeedReview
     END AS "DatePlacedIntoNeedReview",
-    ORQ.OrderInitiationDate,
-    SO.adj_grid_id,
-    SO.adj_grid_name
+    ORQ.OR_OrderInitDate,
+    SO.AdjGridId,
+    SO.AdjGridName
 FROM 
     {{ ref('TempSearch_Order') }} SO
 INNER JOIN 
-    ACCEL_ABCNEW_RAW.SEARCH_STATUS ST ON ST.status_code = SO.search_status
+    ACCEL_ABCNEW_RAW.SEARCH_STATUS ST ON ST.status_code = SO.StatusCode
 
- LEFT JOIN {{ ref('DWH_Package_dbtpoc') }} p
-        ON p.PackageCode = SO.PackageCode
+ --LEFT JOIN {{ ref('DWH_Package_dbtpoc') }} p
+       -- ON p.package_code = SO.PackageCode
 LEFT JOIN 
-    ACCEL_BI_BR.DWH_DimOrder DimOdr ON DimOdr.PackageID = SO.package_req_id
+    ACCEL_BI_BR.DWH_DimOrder DimOdr ON DimOdr.PackageID = SO.PackageId
 LEFT JOIN 
-    {{ ref('TempOrder_Request') }} ORQ ON ORQ.OR_PackageId = SO.package_req_id
-LEFT JOIN 
-    ACCEL_ABCNEW_RAW.LOCALE L ON L.id = ORQ.OR_Locale_Id
+    {{ ref('TempOrder_Request') }} ORQ ON ORQ.OR_PackageId = SO.PackageId
+--LEFT JOIN 
+    --ACCEL_ABCNEW_RAW.LOCALE L ON L.id = ORQ.OR_Locale_Id
 LEFT JOIN 
     ACCEL_ABCNEW_RAW.ADJ_OPTION ADJ ON ADJ.adj_id = SO.adj_id
 LEFT JOIN 
@@ -132,45 +132,47 @@ LEFT JOIN
 LEFT JOIN 
     ACCEL_ABCNEW_RAW.ORDER_TYPE OT ON OT.OT_Id = ORQ.OR_OT_id 
 LEFT JOIN 
-    ACCEL_ABCNEW_RAW.STG_OR_EAV_ENTITY_GEN EEG6 ON EEG6.EAVG_OR_Id = ORQ.OR_Id 
-    AND ORQ.OR_PackageId = SO.package_req_id 
+    ACCEL_ABCNEW_RAW.OR_EAV_ENTITY_GEN EEG6 ON EEG6.EAVG_OR_Id = ORQ.OR_Id 
+    AND ORQ.OR_PackageId = SO.PackageId 
     AND EEG6.EAVG_GA_Id = 56
 LEFT JOIN 
-    ACCEL_ABCNEW_RAW.STG_OR_EAV_ENTITY_GEN EEG7 ON EEG7.EAVG_OR_Id = ORQ.OR_Id 
-    AND ORQ.OR_PackageId = SO.package_req_id 
+    ACCEL_ABCNEW_RAW.OR_EAV_ENTITY_GEN EEG7 ON EEG7.EAVG_OR_Id = ORQ.OR_Id 
+    AND ORQ.OR_PackageId = SO.PackageId 
     AND EEG7.EAVG_GA_Id = 41
 LEFT JOIN 
-    ACCEL_ABCNEW_RAW.STG_OR_EAV_ENTITY_GEN EEG8 ON EEG8.EAVG_OR_Id = ORQ.OR_Id 
-    AND ORQ.OR_PackageId = SO.package_req_id 
+    ACCEL_ABCNEW_RAW.OR_EAV_ENTITY_GEN EEG8 ON EEG8.EAVG_OR_Id = ORQ.OR_Id 
+    AND ORQ.OR_PackageId = SO.PackageId 
     AND EEG8.EAVG_GA_Id = 42
 LEFT JOIN 
-    ACCEL_ABCNEW_RAW.STG_OR_EAV_ENTITY_GEN EEG9 ON EEG9.EAVG_OR_Id = ORQ.OR_Id 
-    AND ORQ.OR_PackageId = SO.package_req_id 
+    ACCEL_ABCNEW_RAW.OR_EAV_ENTITY_GEN EEG9 ON EEG9.EAVG_OR_Id = ORQ.OR_Id 
+    AND ORQ.OR_PackageId = SO.PackageId 
     AND EEG9.EAVG_GA_Id = 44
 LEFT JOIN 
-    {{ ref('Stg_Pkg_Reopentime_Jrnl') }} JRNL ON JRNL.PkgReqId = SO.package_req_id
+    {{ ref('Stg_Pkg_Reopentime_Jrnl') }} JRNL ON JRNL.PkgReqId = SO.PackageId
 LEFT JOIN 
-    {{ ref('Stg_Pckg_Last_Update_Dt') }} PLUD ON PLUD.PkgReqId = SO.package_req_id
+    {{ ref('Stg_Pckg_Last_Update_Dt') }} PLUD ON PLUD.PkgReqId = SO.PackageId
 LEFT JOIN 
-    {{ ref('TempSearch_OrderCount') }} SOC ON SOC.package_req_id = SO.package_req_id
+    {{ ref('TempSearch_OrderCount') }} SOC ON SOC.package_req_id = SO.PackageId
 LEFT JOIN 
-    STG_PKG_STATUS_JRNL STAJRNL ON STAJRNL.PKGREQID = SO.package_req_id 
+    {{ ref('Stg_Pkg_Status_Jrnl') }} STAJRNL ON STAJRNL.PKGREQID = SO.PackageId 
     AND STAJRNL.VALUETO = 'P5'
 LEFT JOIN (
     SELECT 1 AS IsOIN, PkgReqId
     FROM {{ ref('Stg_Pkg_Status_Jrnl') }} sj 
     WHERE sj.ValueTo = 'P5'
-) oin ON oin.PkgReqId = SO.package_req_id
+) oin ON oin.PkgReqId = SO.PackageId
 LEFT JOIN (
     SELECT 1 AS IsRN, PkgReqId
     FROM {{ ref('Stg_Pkg_Status_Jrnl') }} sj 
     WHERE sj.ValueTo = 'P4'
-) rn ON rn.PkgReqId = SO.package_req_id
+) rn ON rn.PkgReqId = SO.PackageId
 LEFT JOIN (
     SELECT package_id, created_on, first_name || ' ' || last_name AS CandidateDisputedName
     FROM (
         SELECT 
             package_id, 
+            first_name,
+            last_name,
             created_on, 
             ROW_NUMBER() OVER (PARTITION BY package_id ORDER BY created_on DESC) AS RNUM 
         FROM ACCEL_ABCNEW_RAW.DISPUTED_ORDER
@@ -178,4 +180,4 @@ LEFT JOIN (
     WHERE RNUM = 1
 ) DO ON DO.package_id = ORQ.OR_PackageId
 WHERE 
-    SO.package_req_id IS NOT NULL
+    SO.PackageId IS NOT NULL
