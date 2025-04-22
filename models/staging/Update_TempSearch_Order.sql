@@ -10,7 +10,7 @@ WITH fee_info AS (
         SUM(STATUTORY_FEE) AS STATUTORY_FEE,
         SUM(addl_year_fee) AS addl_year_fee,
         SUM(COPIES) AS COPIES
-    FROM {{ ref('Stg_Serch_Dim') }}
+    FROM DEV.ACCEL_BI_STG.Stg_Serch_Dim
     GROUP BY PackageId
 ),
 
@@ -102,10 +102,10 @@ SELECT
     so.*,
 
     -- Enriched fields
-    f.DOC_FEE,
-    f.STATUTORY_FEE,
-    f.addl_year_fee,
-    f.COPIES,
+    CAST(f.DOC_FEE AS NUMBER(19,4)) AS DOC_FEE,
+    CAST(f.STATUTORY_FEE AS NUMBER(19,4)) AS STATUTORY_FEE,
+    CAST(f.addl_year_fee AS NUMBER(19,4)) AS addl_year_fee,
+    CAST(f.COPIES AS NUMBER(19,4)) AS COPIES,
     atr.reason AS AdjTriggerReason,
     cn.note_description AS CannedNote,
     ae.return_datetime AS ABEndDate,
@@ -117,7 +117,7 @@ SELECT
     so.AdjudicationNote
 
 FROM {{ ref('TempSearch_Order') }} so
-LEFT JOIN {{ ref('Stg_Serch_Dim') }}  ON s S.searchID=SO.SearchId
+LEFT JOIN {{ ref('Stg_Serch_Dim') }} s ON  s.searchId=so.SearchId
 LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
 LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rn = 1
 LEFT JOIN canned_note cn ON cn.note_id = s.search_note_id
