@@ -83,7 +83,7 @@ final_adj AS (
             ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
         FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
         JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-            ON o2.adj_id = h.adj_id AND o2.adj_category IN (0, 1)
+            ON TRY_TO_NUMBER(o2.adj_id) = TRY_TO_NUMBER(h.adj_id) AND o2.adj_category IN (0, 1)
         WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
     ) h
     JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
@@ -101,7 +101,7 @@ needs_review_adj AS (
             ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
         FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
         JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-            ON o2.adj_id = h.adj_id AND o2.adj_category = 2
+            ON TRY_TO_NUMBER(o2.adj_id) = TRY_TO_NUMBER(h.adj_id) AND o2.adj_category = 2
         WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
     ) h
     JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
@@ -112,10 +112,7 @@ SELECT
     so.*,
 
     -- Enriched fields
-    CAST(f.DOC_FEE AS NUMBER(19,4)) AS DOC_FEE,
-    CAST(f.STATUTORY_FEE AS NUMBER(19,4)) AS STATUTORY_FEE,
-    CAST(f.addl_year_fee AS NUMBER(19,4)) AS addl_year_fee,
-    CAST(f.COPIES AS NUMBER(19,4)) AS COPIES,
+
     atr.reason AS AdjTriggerReason,
     cn.note_description AS CannedNote,
     ae.return_datetime AS ABEndDate,
