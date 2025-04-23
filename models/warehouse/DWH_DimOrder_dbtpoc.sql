@@ -23,7 +23,7 @@
                 'ClientRefNum7', 'ClientRefNum8', 'ClientRefNum9', 'SearchOrderCount',
                 'OINSearchCount', 'IsOIN', 'IsRN', 'AdjudicationNote', 'FinalAdjudicatorName',
                 'NeedsReviewAdjudicatorName', 'ABReviewerName', 'InvitationEmailSent',
-                'PackageProcessedDate', 'DatePlacedIntoNeedReview', 'OrderInitiationDate',
+                'PackageProcessed', 'DatePlacedIntoNeedReview', 'OrderInitiationDate',
                 'adj_grid_id', 'adj_grid_name','PackageKey'
             ]
         ) }}"

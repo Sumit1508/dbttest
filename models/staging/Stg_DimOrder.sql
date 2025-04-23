@@ -100,7 +100,7 @@ SELECT
         ELSE SO.InvitationEmailSent
     END AS "InvitationEmailSent",
     CASE 
-        WHEN DimOdr.PackageProcessedDate IS NOT NULL AND SO.PackageProcessed IS NULL THEN DimOdr.PackageProcessedDate
+        WHEN DimOdr.PackageProcessed IS NOT NULL AND SO.PackageProcessed IS NULL THEN DimOdr.PackageProcessed
         ELSE SO.PackageProcessed
     END AS "PackageProcessed",
     CASE 
