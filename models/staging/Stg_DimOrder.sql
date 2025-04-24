@@ -1,6 +1,6 @@
  
 
-SELECT 
+SELECT DISTINCT
     -- '' AS "OrderKey",  -- Uncomment if needed
     OM.OM_Type AS "OrderModeType",
     OM.OM_SubType AS "OrderModeSubType",
