@@ -1,4 +1,22 @@
-{{ config(materialized='incremental') }}
+{{ config(
+    materialized='incremental',
+    unique_key='search_id'
+) }}
+
+-- Step 1: Get max last_update_date from audit table
+{% set last_run_ts_query %}
+    SELECT MAX(last_run_timestamp) AS last_run
+    FROM ACCEL_LOGGINGDB.load_audit_log
+    WHERE model_name = 'search_delta'
+{% endset %}
+
+{% set results = run_query(last_run_ts_query) %}
+{% set last_run_ts = results.columns[0].values()[0] if results and results.columns[0].values() else "1900-01-01" %}
+
+-- Truncate table on each run
+{% if is_incremental() %}
+   TRUNCATE TABLE ACCEL_BI_STG.Stg_Serch_Dim;
+{% endif %}
 
 WITH GetDeltaSearch_SearchId AS (
     SELECT DISTINCT s1.search_id
@@ -7,21 +25,9 @@ WITH GetDeltaSearch_SearchId AS (
         s1.package_req_id IN (
             SELECT s.package_req_id
             FROM ACCEL_ABCNEW_RAW.SEARCH s
-            WHERE 
-                {% if is_incremental() %}
-                    s.last_update_date > (SELECT MAX(last_update_date) FROM {{ this }})
-                {% else %}
-                    s.last_update_date >= '2023-12-01'
-                {% endif %}
+            WHERE s.last_update_date >= TO_TIMESTAMP('{{ last_run_ts }}')
         )
-        OR (
-            {% if is_incremental() %}
-                s1.last_update_date > (SELECT MAX(last_update_date) FROM {{ this }})
-            {% else %}
-                s1.last_update_date >= '2023-12-01'
-            {% endif %}
-            AND s1.package_req_id IS NULL
-        )
+        OR (s1.last_update_date >= TO_TIMESTAMP('{{ last_run_ts }}') AND s1.package_req_id IS NULL)
     )
 ),
 
@@ -96,4 +102,3 @@ LEFT JOIN ACCEL_ABCNEW_RAW.SEARCH_STATUS st ON st.status_code = s.search_status
 LEFT JOIN ACCEL_ABCNEW_RAW.STATE_CODE sc ON sc.state_code = s.state_code
 LEFT JOIN ACCEL_ABCNEW_RAW.Auto_Notes n ON n.note_id = s.search_note_id
 LEFT JOIN LatestFollowUpNote fh ON fh.searchId = s.search_id
-WHERE g.search_id IS NOT NULL
