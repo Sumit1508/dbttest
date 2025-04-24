@@ -1,13 +1,27 @@
+{{ config(materialized='incremental') }}
+
 WITH GetDeltaSearch_SearchId AS (
     SELECT DISTINCT s1.search_id
     FROM ACCEL_ABCNEW_RAW.SEARCH s1
-    WHERE '2020-12-01' IS NOT NULL AND (
+    WHERE (
         s1.package_req_id IN (
             SELECT s.package_req_id
             FROM ACCEL_ABCNEW_RAW.SEARCH s
-            WHERE s.last_update_date >= '2023-12-01'
+            WHERE 
+                {% if is_incremental() %}
+                    s.last_update_date > (SELECT MAX(last_update_date) FROM {{ this }})
+                {% else %}
+                    s.last_update_date >= '2023-12-01'
+                {% endif %}
         )
-        OR (s1.last_update_date >= '2023-12-01' AND s1.package_req_id IS NULL)
+        OR (
+            {% if is_incremental() %}
+                s1.last_update_date > (SELECT MAX(last_update_date) FROM {{ this }})
+            {% else %}
+                s1.last_update_date >= '2023-12-01'
+            {% endif %}
+            AND s1.package_req_id IS NULL
+        )
     )
 ),
 
@@ -82,3 +96,4 @@ LEFT JOIN ACCEL_ABCNEW_RAW.SEARCH_STATUS st ON st.status_code = s.search_status
 LEFT JOIN ACCEL_ABCNEW_RAW.STATE_CODE sc ON sc.state_code = s.state_code
 LEFT JOIN ACCEL_ABCNEW_RAW.Auto_Notes n ON n.note_id = s.search_note_id
 LEFT JOIN LatestFollowUpNote fh ON fh.searchId = s.search_id
+WHERE g.search_id IS NOT NULL
