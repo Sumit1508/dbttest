@@ -1,3 +1,10 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
+
 SELECT 
     CASE 
         WHEN j.PkgReqId IS NULL THEN s.PackageId 

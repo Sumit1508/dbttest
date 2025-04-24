@@ -1,3 +1,10 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
+
 WITH base_journal AS (
     SELECT 
         j.EntityId, 

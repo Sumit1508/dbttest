@@ -1,3 +1,10 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
+
 SELECT 
     EAVG_Id, 
     EAVG_OR_Id, 

@@ -1,3 +1,10 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
+
 SELECT 
     COUNT(1) AS SearchOrderCount,
     PackageId AS package_req_id

@@ -1,6 +1,10 @@
 {{ config(
     materialized = 'table',
-    alias = 'TempSearch_Order'
+    alias = 'TempSearch_Order',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+
 ) }}
 
 WITH fee_info AS (

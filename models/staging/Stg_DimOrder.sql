@@ -1,3 +1,9 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
  
 
 SELECT DISTINCT

@@ -1,3 +1,10 @@
+{{ config(
+    materialized='incremental',
+    pre_hook=[
+        "TRUNCATE TABLE {{ this }}"
+    ]
+) }}
+
 SELECT 
     PkgReqId, 
     MAX(PackageUpdateTime) AS PackageUpdateTime
