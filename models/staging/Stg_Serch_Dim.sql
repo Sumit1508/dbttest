@@ -1,33 +1,30 @@
 {{ config(
     materialized='incremental',
-    unique_key='search_id'
+    unique_key='SearchId',
+    post_hook=[
+        "INSERT INTO ACCEL_LOGGINGDB.load_audit_log (model_name, last_run_timestamp) 
+        SELECT 'Stg_Search_Dim', MAX(last_update_date)
+        FROM {{ this }}"
+    ]
 ) }}
 
--- Step 1: Get max last_update_date from audit table
-{% set last_run_ts_query %}
+
+WITH last_run AS (
     SELECT MAX(last_run_timestamp) AS last_run
     FROM ACCEL_LOGGINGDB.load_audit_log
-    WHERE model_name = 'search_delta'
-{% endset %}
+    WHERE model_name = 'Stg_Serch_Dim'
+),
 
-{% set results = run_query(last_run_ts_query) %}
-{% set last_run_ts = results.columns[0].values()[0] if results and results.columns[0].values() else "1900-01-01" %}
-
--- Truncate table on each run
-{% if is_incremental() %}
-   TRUNCATE TABLE ACCEL_BI_STG.Stg_Serch_Dim;
-{% endif %}
-
-WITH GetDeltaSearch_SearchId AS (
+GetDeltaSearch_SearchId AS (
     SELECT DISTINCT s1.search_id
     FROM ACCEL_ABCNEW_RAW.SEARCH s1
     WHERE (
         s1.package_req_id IN (
             SELECT s.package_req_id
             FROM ACCEL_ABCNEW_RAW.SEARCH s
-            WHERE s.last_update_date >= TO_TIMESTAMP('{{ last_run_ts }}')
+            WHERE s.last_update_date >= (SELECT last_run FROM last_run)
         )
-        OR (s1.last_update_date >= TO_TIMESTAMP('{{ last_run_ts }}') AND s1.package_req_id IS NULL)
+        OR (s1.last_update_date >= (SELECT last_run FROM last_run) AND s1.package_req_id IS NULL)
     )
 ),
 
@@ -102,3 +99,7 @@ LEFT JOIN ACCEL_ABCNEW_RAW.SEARCH_STATUS st ON st.status_code = s.search_status
 LEFT JOIN ACCEL_ABCNEW_RAW.STATE_CODE sc ON sc.state_code = s.state_code
 LEFT JOIN ACCEL_ABCNEW_RAW.Auto_Notes n ON n.note_id = s.search_note_id
 LEFT JOIN LatestFollowUpNote fh ON fh.searchId = s.search_id
+
+{% if is_incremental() %}
+WHERE s.last_update_date > (SELECT last_run FROM last_run)
+{% endif %}
