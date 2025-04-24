@@ -11,24 +11,25 @@
             [
                 'OrderModeType', 'OrderModeSubType', 'OrderOriginCode', 'OrderOriginSubCode',
                 'OrderType', 'OrderSubType', 'OrderDate', 'ClientRefNum',
-                'CompletionDate', 'Status', 'SubStatus', 'ResultSentDate', 
+                'CompletionDate', 'Status', 'SubStatus', 'ResultSentDate',
                 'InvoiceDatetime', 'NotMonthlyInvoiceDatetime', 'ResearcherSummaryDate',
                 'ResultNote', 'StatusNote', 'EmailSent', 'AdjudicationDescription',
-                'NeedReviewEmailSent', 'OINEmailSent', 'PkgProcessed', 'InsertAuditKey',
-                'UpdateAuditKey', 'DisputedStatus', 'DisputedDate', 'DOC_FEE', 'STATUTORY_FEE',
-                'ADDITIONAL_YEAR_FEE', 'COPIES', 'RefNumber2', 'RefNumber3', 'RefNumber4',
+                'NeedReviewEmailSent', 'OINEmailSent', 'PkgProcessed', 'DOC_FEE', 'STATUTORY_FEE',
+                'ADDITIONAL_YEAR_FEE', 'COPIES', 'InsertAuditKey', 'UpdateAuditKey',
+                'DisputedStatus', 'DisputedDate', 'RefNumber2', 'RefNumber3', 'RefNumber4',
                 'RefNumber5', 'SEARCHID', 'ABStartDate', 'ABEndDate', 'CompleteDate',
-                'CannedNote', 'AdjTriggerReason', 'PackageCompleted10Days', 'CandidateDisputedName',
-                'PackageReopenInd', 'PackageReopenTime', 'PastDueSearchCount', 'ClientRefNum6',
-                'ClientRefNum7', 'ClientRefNum8', 'ClientRefNum9', 'SearchOrderCount',
-                'OINSearchCount', 'IsOIN', 'IsRN', 'AdjudicationNote', 'FinalAdjudicatorName',
-                'NeedsReviewAdjudicatorName', 'ABReviewerName', 'InvitationEmailSent',
-                'PackageProcessed', 'DatePlacedIntoNeedReview', 'OR_OrderInitDate',
-                'AdjGridId', 'AdjGridName'
+                'CannedNote', 'ClientRefNum6', 'ClientRefNum7', 'ClientRefNum8', 'ClientRefNum9',
+                'AdjTriggerReason', 'PackageCompleted10Days', 'CandidateDisputedName',
+                'PackageReopenInd', 'PackageReopenTime', 'PastDueSearchCount', 'PackageUpdateTime',
+                'SearchOrderCount', 'OINSearchCount', 'IsOIN', 'IsRN', 'AdjudicationNote',
+                'FinalAdjudicatorName', 'NeedsReviewAdjudicatorName', 'ABReviewerName',
+                'InvitationEmailSent', 'PackageProcessed', 'DatePlacedIntoNeedReview',
+                'OR_OrderInitDate', 'AdjGridId', 'AdjGridName'
             ]
         ) }}"
     ]
 ) }}
+
 
 
 -- Dummy SELECT (only for initial temp view, won't be used during merge)

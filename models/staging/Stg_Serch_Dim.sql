@@ -5,9 +5,9 @@ WITH GetDeltaSearch_SearchId AS (
         s1.package_req_id IN (
             SELECT s.package_req_id
             FROM ACCEL_ABCNEW_RAW.SEARCH s
-            WHERE s.last_update_date >= '2020-12-01'
+            WHERE s.last_update_date >= '2023-12-01'
         )
-        OR (s1.last_update_date >= '2020-12-01' AND s1.package_req_id IS NULL)
+        OR (s1.last_update_date >= '2023-12-01' AND s1.package_req_id IS NULL)
     )
 ),
 
