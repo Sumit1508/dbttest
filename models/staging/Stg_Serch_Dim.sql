@@ -3,7 +3,7 @@
     unique_key='SearchId',
     post_hook=[
         "INSERT INTO ACCEL_LOGGINGDB.load_audit_log (model_name, last_run_timestamp) 
-        SELECT 'Stg_Search_Dim', MAX(last_update_date)
+        SELECT 'Stg_Serch_Dim', MAX(last_update_date)
         FROM {{ this }}"
     ]
 ) }}
