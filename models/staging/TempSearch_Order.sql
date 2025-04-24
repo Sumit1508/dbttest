@@ -79,3 +79,4 @@ LEFT JOIN (
     WHERE adj_value IS NOT NULL
 ) APD 
     ON s.SearchId = APD.search_id AND APD.rw = 1
+WHERE s.SearchTypeCode='9PK'
