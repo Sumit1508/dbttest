@@ -45,5 +45,6 @@ models:
       +materialized: table
       +schema: ACCEL_BI_BR
 
+# ✅ This is the correct spot for run-end hooks
 on-run-end:
-  - "{% if execute and not exceptions %}{{ log_merge_result(this.identifier, 'SUCCESS', 'Merge completed successfully') }}{% endif %}"
+  - "{% if execute and exceptions %}{{ log_merge_result(this.identifier, 'FAILURE', exceptions) }}{% endif %}"
