@@ -1,163 +1,168 @@
-{{ config(
-    materialized = 'table',
-    alias = 'TempSearch_Order',
-    pre_hook=[
-        "TRUNCATE TABLE {{ this }}"
-    ]
+{{
+    config(
+        materialized="table",
+        alias="TempSearch_Order",
+        pre_hook=["TRUNCATE TABLE {{ this }}"],
+    )
+}}
 
-) }}
+with
+    fee_info as (
+        select
+            packageid as package_req_id,
+            sum(doc_fee) as doc_fee,
+            sum(statutory_fee) as statutory_fee,
+            sum(addl_year_fee) as addl_year_fee,
+            sum(copies) as copies
+        from dev.accel_bi_stg.stg_serch_dim
+        group by packageid
+    ),
 
-WITH fee_info AS (
-    SELECT 
-        PackageId AS package_req_id,
-        SUM(DOC_FEE) AS DOC_FEE,
-        SUM(STATUTORY_FEE) AS STATUTORY_FEE,
-        SUM(addl_year_fee) AS addl_year_fee,
-        SUM(COPIES) AS COPIES
-    FROM DEV.ACCEL_BI_STG.Stg_Serch_Dim
-    GROUP BY PackageId
-),
-
-adj_trigger_reason AS (
-    SELECT 
-        search_id,
-        reason,
-        ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY adj_process_detail_id DESC) AS rn
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_PROCESS_DETAIL') }}
-    WHERE adj_value IS NOT NULL
-),
-
-canned_note AS (
-    SELECT 
-        note_id,
-        note_description
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'Auto_Notes') }}
-),
-
-ab_end_date AS (
-    SELECT 
-        package_req_id,
-        return_datetime
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'SEARCH') }}
-    WHERE search_type_code = '9PK'
-),
-
-complete_date AS (
-    SELECT 
-        h.search_id,
-        h.history_time
-    FROM (
-        SELECT *
-        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }}
-        WHERE NULLIF(adj_id, '') IS NOT NULL
-    ) h
-    JOIN (
-        SELECT *
-        FROM {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }}
-        WHERE NULLIF(TRIM(adj_id), '') IS NOT NULL 
-          AND adj_category IN (0, 1)
-    ) o2 
-    ON TRY_TO_NUMBER(h.adj_id) = TRY_TO_NUMBER(o2.adj_id)
-    WHERE h.status_code = 'R'
-      AND h.history_category = 'ADJ'
-),
-
-package_completed AS (
-    SELECT 
-        h.search_id,
-        h.history_time AS InvitationEmailSent,
-        CASE 
-            WHEN DATEDIFF(DAY, h.history_time, s.OrderDate) <= 10 THEN 'Y'
-            ELSE 'N'
-        END AS PackageCompleted10Days
-    FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-    JOIN {{ ref('Stg_Serch_Dim') }} s ON s.SearchId = h.search_id
-    WHERE h.history_category = 'EML'
-),
-
-final_adj AS (
-    SELECT 
-        h.search_id,
-        u.user_first_name || ' ' || u.user_last_name AS FinalAdjudicatorName
-    FROM (
-        SELECT 
+    adj_trigger_reason as (
+        select
             search_id,
-            user_id,
-            ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
-        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-        JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-            ON TRY_TO_NUMBER(o2.adj_id) = TRY_TO_NUMBER(h.adj_id) AND o2.adj_category IN (0, 1)
-        WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
-    ) h
-    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
-    WHERE h.rn = 1
-),
+            reason,
+            row_number() over (
+                partition by search_id order by adj_process_detail_id desc
+            ) as rn
+        from {{ source("ACCEL_ABCNEW_RAW", "ADJ_PROCESS_DETAIL") }}
+        where adj_value is not null
+    ),
 
-needs_review_adj AS (
-    SELECT 
-        h.search_id,
-        u.user_first_name || ' ' || u.user_last_name AS NeedsReviewAdjudicatorName
-    FROM (
-        SELECT 
-            search_id,
-            user_id,
-            ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY history_id DESC) AS rn
-        FROM {{ source('ACCEL_ABCNEW_RAW', 'HISTORY_DETAIL') }} h
-        JOIN {{ source('ACCEL_ABCNEW_RAW', 'ADJ_OPTION') }} o2 
-            ON TRY_TO_NUMBER(o2.adj_id) = TRY_TO_NUMBER(h.adj_id) AND o2.adj_category = 2
-        WHERE h.status_code = 'R' AND h.history_category = 'ADJ'
-    ) h
-    JOIN {{ source('ACCEL_ABCNEW_RAW', 'ABCUSER') }} u ON u.user_id = h.user_id
-    WHERE h.rn = 1
-)
+    canned_note as (
+        select note_id, note_description
+        from {{ source("ACCEL_ABCNEW_RAW", "Auto_Notes") }}
+    ),
 
-SELECT 
-    so.PackageId,
-    so.StatusCode,
-    so.SubStatus,
-    so.InvoiceDatetime,
-    so.NotMonthlyInvoiceDatetime,
-    so.ResearcherSummaryDate,
-    so.ResultNote,
-    so.StatusNote,
+    ab_end_date as (
+        select package_req_id, return_datetime
+        from {{ source("ACCEL_ABCNEW_RAW", "SEARCH") }}
+        where search_type_code = '9PK'
+    ),
+
+    complete_date as (
+        select h.search_id, h.history_time
+        from
+            (
+                select *
+                from {{ source("ACCEL_ABCNEW_RAW", "HISTORY_DETAIL") }}
+                where nullif(adj_id, '') is not null
+            ) h
+        join
+            (
+                select *
+                from {{ source("ACCEL_ABCNEW_RAW", "ADJ_OPTION") }}
+                where nullif(trim(adj_id), '') is not null and adj_category in (0, 1)
+            ) o2
+            on try_to_number(h.adj_id) = try_to_number(o2.adj_id)
+        where h.status_code = 'R' and h.history_category = 'ADJ'
+    ),
+
+    package_completed as (
+        select
+            h.search_id,
+            h.history_time as invitationemailsent,
+            case
+                when datediff(day, h.history_time, s.orderdate) <= 10 then 'Y' else 'N'
+            end as packagecompleted10days
+        from {{ source("ACCEL_ABCNEW_RAW", "HISTORY_DETAIL") }} h
+        join {{ ref("Stg_Serch_Dim") }} s on s.searchid = h.search_id
+        where h.history_category = 'EML'
+    ),
+
+    final_adj as (
+        select
+            h.search_id,
+            u.user_first_name || ' ' || u.user_last_name as finaladjudicatorname
+        from
+            (
+                select
+                    search_id,
+                    user_id,
+                    row_number() over (
+                        partition by search_id order by history_id desc
+                    ) as rn
+                from {{ source("ACCEL_ABCNEW_RAW", "HISTORY_DETAIL") }} h
+                join
+                    {{ source("ACCEL_ABCNEW_RAW", "ADJ_OPTION") }} o2
+                    on try_to_number(o2.adj_id) = try_to_number(h.adj_id)
+                    and o2.adj_category in (0, 1)
+                where h.status_code = 'R' and h.history_category = 'ADJ'
+            ) h
+        join {{ source("ACCEL_ABCNEW_RAW", "ABCUSER") }} u on u.user_id = h.user_id
+        where h.rn = 1
+    ),
+
+    needs_review_adj as (
+        select
+            h.search_id,
+            u.user_first_name || ' ' || u.user_last_name as needsreviewadjudicatorname
+        from
+            (
+                select
+                    search_id,
+                    user_id,
+                    row_number() over (
+                        partition by search_id order by history_id desc
+                    ) as rn
+                from {{ source("ACCEL_ABCNEW_RAW", "HISTORY_DETAIL") }} h
+                join
+                    {{ source("ACCEL_ABCNEW_RAW", "ADJ_OPTION") }} o2
+                    on try_to_number(o2.adj_id) = try_to_number(h.adj_id)
+                    and o2.adj_category = 2
+                where h.status_code = 'R' and h.history_category = 'ADJ'
+            ) h
+        join {{ source("ACCEL_ABCNEW_RAW", "ABCUSER") }} u on u.user_id = h.user_id
+        where h.rn = 1
+    )
+
+select
+    so.packageid,
+    so.statuscode,
+    so.substatus,
+    so.invoicedatetime,
+    so.notmonthlyinvoicedatetime,
+    so.researchersummarydate,
+    so.resultnote,
+    so.statusnote,
     so.email_sent,
     so.need_review_email_sent,
     so.oin_email_sent,
     so.pkg_processed,
     so.adj_id,
-    so.CompletionDate,
-    so.OrderDate,
-    f.DOC_FEE,
-    f.STATUTORY_FEE,
-    f.addl_year_fee AS ADDITIONAL_YEAR_FEE,
-    f.COPIES,
-    so.RefNumber2,
-    so.RefNumber3,
-    so.RefNumber4,
-    so.RefNumber5,
-    so.OrderDate AS ABStartDate,
-    ae.return_datetime AS ABEndDate,
-    cd.history_time AS CompleteDate,
-    so.SearchId,
-    cn.note_description AS CannedNote,
-    atr.reason AS AdjTriggerReason,
-    'N' AS PackageCompleted10Days,
-    0 AS PastDueSearchCount,
-    fa.FinalAdjudicatorName AS FinalAdjudicatorName,
-    NULL AS AdjudicationNote,
-    nra.NeedsReviewAdjudicatorName AS NeedsReviewAdjudicatorName,
-    pc.InvitationEmailSent AS InvitationEmailSent,
-    NULL AS PackageProcessed,
-    NULL AS DatePlacedIntoNeedReview,
-    NULL AS AdjGridId,
-    NULL AS AdjGridName
-FROM {{ ref('Stg_Serch_Dim') }} so
-LEFT JOIN fee_info f ON f.package_req_id = so.PackageId
-LEFT JOIN adj_trigger_reason atr ON atr.search_id = so.SearchId AND atr.rn = 1
-LEFT JOIN canned_note cn ON cn.note_id = so.search_note_id
-LEFT JOIN ab_end_date ae ON ae.package_req_id = so.PackageId
-LEFT JOIN complete_date cd ON cd.search_id = so.SearchId
-LEFT JOIN package_completed pc ON pc.search_id = so.SearchId
-LEFT JOIN final_adj fa ON fa.search_id = so.SearchId
-LEFT JOIN needs_review_adj nra ON nra.search_id = so.SearchId
-WHERE so.SearchTypeCode = '9PK'
+    so.completiondate,
+    so.orderdate,
+    f.doc_fee,
+    f.statutory_fee,
+    f.addl_year_fee as additional_year_fee,
+    f.copies,
+    so.refnumber2,
+    so.refnumber3,
+    so.refnumber4,
+    so.refnumber5,
+    so.orderdate as abstartdate,
+    ae.return_datetime as abenddate,
+    cd.history_time as completedate,
+    so.searchid,
+    cn.note_description as cannednote,
+    atr.reason as adjtriggerreason,
+    'N' as packagecompleted10days,
+    0 as pastduesearchcount,
+    fa.finaladjudicatorname as finaladjudicatorname,
+    null as adjudicationnote,
+    nra.needsreviewadjudicatorname as needsreviewadjudicatorname,
+    pc.invitationemailsent as invitationemailsent,
+    null as packageprocessed,
+    null as dateplacedintoneedreview,
+    null as adjgridid,
+    null as adjgridname
+from {{ ref("Stg_Serch_Dim") }} so
+left join fee_info f on f.package_req_id = so.packageid
+left join adj_trigger_reason atr on atr.search_id = so.searchid and atr.rn = 1
+left join canned_note cn on cn.note_id = so.search_note_id
+left join ab_end_date ae on ae.package_req_id = so.packageid
+left join complete_date cd on cd.search_id = so.searchid
+left join package_completed pc on pc.search_id = so.searchid
+left join final_adj fa on fa.search_id = so.searchid
+left join needs_review_adj nra on nra.search_id = so.searchid
+where so.searchtypecode = '9PK'
