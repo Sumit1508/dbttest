@@ -1,6 +1,5 @@
 {% macro merge_with_logging(target_table, source_table, merge_key, columns_to_update, logging_table='DEV.ACCEL_LOGGINGDB.MERGE_OPERATION_LOGS', run_by='dbt_user') %}
 
--- Declare variables for error handling
 begin;
 
 -- Extract schema from target_table
@@ -18,7 +17,9 @@ select {{ merge_key }} from {{ target_table }};
 create or replace temp table {{ pre_merge_source_temp }} as
 select {{ merge_key }} from {{ source_table }};
 
--- Begin the merge logic
+
+
+-- Actual merge logic
 merge into {{ target_table }} as target
 using {{ source_table }} as source
 on target.{{ merge_key }} = source.{{ merge_key }}
@@ -38,7 +39,19 @@ when not matched then insert (
     {% endfor %}
 );
 
--- Calculate affected row counts
+-- Insert logging info
+insert into {{ logging_table }} (
+    target_table,
+    source_table,
+    merge_key,
+    INSERT_COUNT,
+    UPDATE_COUNT,
+    DELETE_COUNT,
+    merge_timestamp,
+    run_by,
+    additional_info
+)
+-- Calculate affected row count
 with new_rows as (
     select {{ merge_key }} from {{ pre_merge_source_temp }}
     where {{ merge_key }} not in (
@@ -55,17 +68,9 @@ updated_rows as (
             s.{{ col }} is distinct from t.{{ col }}{% if not loop.last %} or {% endif %}
         {% endfor %}
 )
-insert into {{ logging_table }} (
-    target_table,
-    source_table,
-    merge_key,
-    INSERT_COUNT,
-    UPDATE_COUNT,
-    DELETE_COUNT,
-    merge_timestamp,
-    run_by,
-    additional_info
-)
+
+
+
 select
     '{{ target_table }}',
     '{{ source_table }}',
@@ -75,44 +80,12 @@ select
     0,
     current_timestamp(),
     '{{ run_by }}',
-    'Merge completed successfully';
-
--- Commit the transaction
-commit;
+    'Merge completed succesfully';
 
 -- Cleanup temp tables
 drop table if exists {{ pre_merge_target_temp }};
 drop table if exists {{ pre_merge_source_temp }};
+commit;
 
--- Error Handling - Catch Errors and Log
-{% if exceptions %}
-    -- Log the error using DBT's log function with correct syntax
-    {{ log('ERROR: Merge operation failed', 'error') }}
-
-    -- Insert into the logging table with error information
-    insert into {{ logging_table }} (
-        target_table,
-        source_table,
-        merge_key,
-        INSERT_COUNT,
-        UPDATE_COUNT,
-        DELETE_COUNT,
-        merge_timestamp,
-        run_by,
-        additional_info
-    )
-    select
-        '{{ target_table }}',
-        '{{ source_table }}',
-        '{{ merge_key }}',
-        null,
-        null,
-        null,
-        current_timestamp(),
-        '{{ run_by }}',
-        'ERROR: Merge operation failed';
-{% endif %}
-
-end;
 
 {% endmacro %}
