@@ -13,7 +13,7 @@
                 'allow_ala_carte', 'init_comp', 'search_type_code', 'yr_searched', 'pkg_plus',
                 'no_addl_inof_needed', 'no_fm', 'name_count', 'county_count', 'ask_conv',
                 'MMN_SHOW', 'ADD_POSITION_LOCATION_SEARCHES', 'auto_W2_opt', 'auto_W2_utv',
-                'intl_address_question', 'sin_required'
+                'intl_address_question', 'sin_require'
             ]
         )
     ]
