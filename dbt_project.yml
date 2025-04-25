@@ -40,6 +40,10 @@ models:
       +materialized: table
       +schema: ACCEL_BI_STG
 
+
     warehouse:
       +materialized: table
       +schema: ACCEL_BI_BR
+
+on-run-end:
+  - "{% if execute and not exceptions %}{{ log_merge_result(this.identifier, 'SUCCESS', 'Merge completed successfully') }}{% endif %}"
