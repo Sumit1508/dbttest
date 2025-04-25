@@ -19,7 +19,7 @@
     {{ return('') }}
   {% endif %}
 
-  {% if run_query("CREATE OR REPLACE TEMP TABLE " ~ pre_merge_target_temp ~ " AS SELECT " ~ merge_key ~ " FROM " ~ target_table) is none %}
+  {% if run_query("CREATE OR REPLACE TEMP TABL " ~ pre_merge_target_temp ~ " AS SELECT " ~ merge_key ~ " FROM " ~ target_table) is none %}
     {% do log_merge_error(logging_table, run_by, target_table, source_table, merge_key, "Creating PRE_MERGE_TARGET failed") %}
     {{ return('') }}
   {% endif %}

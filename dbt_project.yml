@@ -45,6 +45,8 @@ models:
       +materialized: table
       +schema: ACCEL_BI_BR
 
+on-run-end:
+  - "{{ log_run_results(results) }}"
 
 
 

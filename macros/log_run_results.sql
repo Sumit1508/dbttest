@@ -1,6 +1,6 @@
 {% macro log_run_results(results) %}
   {% for r in results %}
-    {% if r.status != 'success' %}
+    {% if r.status == 'error' %}
       {% set log_sql %}
         INSERT INTO DEV.ACCEL_LOGGINGDB.DBT_MODEL_ERRORS (
           model_name,
@@ -8,7 +8,8 @@
           message,
           run_by,
           run_time
-        ) VALUES (
+        )
+        VALUES (
           '{{ r.node.name }}',
           '{{ r.status }}',
           '{{ r.message | replace("'", "") }}',
