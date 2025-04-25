@@ -3,10 +3,6 @@
     unique_key='SearchId',
     pre_hook=[
         "TRUNCATE TABLE {{ this }}"
-    ],
-    post_hook=[
-        "INSERT INTO ACCEL_LOGGINGDB.load_audit_log (model_name, last_run_timestamp)
-         SELECT 'Stg_Serch_Dim', COALESCE(MAX(last_update_date), '1900-01-01') FROM {{ this }}"
     ]
 ) }}
 
