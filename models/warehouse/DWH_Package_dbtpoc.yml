@@ -10,6 +10,7 @@ models:
         tests:
           - not_null
           - unique
+          - test_pkg_code_non_null
 
       - name: pkg_active
         description: "Indicates whether the package is active"
@@ -34,6 +35,10 @@ models:
         tests:
           - custom_pkg_price_check:
               column_name: pkg_price
+
+      
+    
+
 
 
 
