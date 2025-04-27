@@ -10,7 +10,7 @@ models:
         tests:
           - not_null
           - unique
-          - test_pkg_code_non_null
+          
 
       - name: pkg_active
         description: "Indicates whether the package is active"
