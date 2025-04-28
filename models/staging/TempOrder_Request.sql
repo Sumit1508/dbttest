@@ -21,4 +21,4 @@ SELECT
 FROM {{ source('ACCEL_ABCNEW_RAW', 'ORDER_REQUEST') }} ORQ
 INNER JOIN {{ ref('Stg_Serch_Dim') }} S 
     ON ORQ.OR_PackageId = S.PackageId
-WHERE S.SearchTypeCode = '9pk'
+WHERE S.SearchTypeCode = '9PK'
