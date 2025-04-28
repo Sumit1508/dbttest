@@ -5,7 +5,7 @@
     ]
 ) }}
  
-
+with cte as(
 SELECT DISTINCT
     -- '' AS "OrderKey",  -- Uncomment if needed
     OM.OM_Type AS "OrderModeType",
@@ -117,7 +117,8 @@ SELECT DISTINCT
     END AS "DatePlacedIntoNeedReview",
     ORQ.OR_OrderInitDate,
     SO.AdjGridId,
-    SO.AdjGridName
+    SO.AdjGridName,
+    ROW_NUMBER() OVER(PARTITION BY SO.PackageID ORDER BY COALESCE(DimOdr.InvitationEmailSent,SO.InvitationEmailSent) desc) as rn
 FROM 
     {{ ref('TempSearch_Order') }} SO
 INNER JOIN 
@@ -189,3 +190,7 @@ LEFT JOIN (
 ) DO ON DO.package_id = ORQ.OR_PackageId
 WHERE 
     SO.PackageId IS NOT NULL
+)
+
+SELECT * FROM cte
+where rn=1
