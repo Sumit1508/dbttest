@@ -26,12 +26,13 @@
                 'InvitationEmailSent', 'PackageProcessed', 'DatePlacedIntoNeedReview',
                 'OR_OrderInitDate', 'AdjGridId', 'AdjGridName'
             ]
-        ) }}"
-        ,
-        "INSERT INTO ACCEL_LOGGINGDB.load_audit_log (model_name, last_run_timestamp) "
-        "SELECT 'Stg_Serch_Dim', COALESCE(MAX(last_update_date), '1900-01-01') FROM ACCEL_BI_STG.Stg_Serch_Dim"
+        ) }}",
+        
+        "UPDATE ACCEL_LOGGINGDB.load_audit_log SET previous_run_timestamp = last_run_timestamp, "
+        "last_run_timestamp = COALESCE((SELECT MAX(last_update_date) FROM ACCEL_BI_STG.Stg_Serch_Dim), last_run_timestamp) "
+        "WHERE model_name = 'Stg_Serch_Dim'"
     ]
-) }}
+)}}
 
 -- Dummy SELECT (only for initial temp view, won't be used during merge)
 SELECT *

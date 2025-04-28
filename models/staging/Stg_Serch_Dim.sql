@@ -8,7 +8,7 @@
 
 
 WITH last_run AS (
-    SELECT MAX(last_run_timestamp) AS last_run
+    SELECT COALESCE(last_run_timestamp,previous_run_timestamp,'1900-01-01')AS last_run
     FROM ACCEL_LOGGINGDB.load_audit_log
     WHERE model_name = 'Stg_Serch_Dim'
 ),
