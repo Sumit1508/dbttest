@@ -12,12 +12,20 @@ begin;
 
 -- Create temp tables to track merge impact
 create or replace temp table {{ pre_merge_target_temp }} as
-select {{ merge_key }} from {{ target_table }};
+select 
+    {{ merge_key }},
+    {% for col in columns_to_update %}
+        {{ col }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+from {{ target_table }};
 
 create or replace temp table {{ pre_merge_source_temp }} as
-select {{ merge_key }} from {{ source_table }};
-
-
+select 
+    {{ merge_key }},
+    {% for col in columns_to_update %}
+        {{ col }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+from {{ source_table }};
 
 -- Actual merge logic
 merge into {{ target_table }} as target
@@ -60,16 +68,13 @@ with new_rows as (
 ),
 updated_rows as (
     select s.{{ merge_key }}
-    from {{ source_table }} s
-    join {{ target_table }} t
-    on s.{{ merge_key }} = t.{{ merge_key }}
+    from {{ pre_merge_source_temp }} s
+    join {{ pre_merge_target_temp }} t on s.{{ merge_key }} = t.{{ merge_key }}
     where
         {% for col in columns_to_update %}
             s.{{ col }} is distinct from t.{{ col }}{% if not loop.last %} or {% endif %}
         {% endfor %}
 )
-
-
 
 select
     '{{ target_table }}',
@@ -80,12 +85,11 @@ select
     0,
     current_timestamp(),
     '{{ run_by }}',
-    'Merge completed succesfully';
+    'Merge completed successfully';
 
 -- Cleanup temp tables
 drop table if exists {{ pre_merge_target_temp }};
 drop table if exists {{ pre_merge_source_temp }};
 commit;
-
 
 {% endmacro %}
