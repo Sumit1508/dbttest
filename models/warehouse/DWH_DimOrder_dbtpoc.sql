@@ -5,7 +5,7 @@
     on_schema_change='sync_all_columns',
     post_hook=[
         "{{ merge_with_logging(
-            'DEV.ACCEL_BI_BR.DWH_DimOrde',
+            'DEV.ACCEL_BI_BR.DWH_DimOrder',
             'DEV.ACCEL_BI_STG.Stg_DimOrder',
             'PackageID',
             [
